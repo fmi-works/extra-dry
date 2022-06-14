@@ -1,10 +1,6 @@
-﻿using ExtraDry.Server;
-using System;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using Xunit;
+﻿using ExtraDry.Core.Tests.Rules;
 
-namespace ExtraDry.Core.Tests.Rules {
+namespace ExtraDry.Server.Tests.Rules {
     public class RuleEngineUpdateIndividualAsyncTests {
 
         [Fact]
@@ -125,7 +121,7 @@ namespace ExtraDry.Core.Tests.Rules {
             var rules = new RuleEngine(new ServiceProviderStub());
             var source = SampleEntity();
             var destination = SampleEntity();
-            source.DefaultIgnoredString = null;
+            source.DefaultIgnoredString = null!;
             destination.DefaultIgnoredString = "something";
 
             await rules.UpdateAsync(source, destination);
@@ -243,7 +239,7 @@ namespace ExtraDry.Core.Tests.Rules {
             public string JsonIgnoredFakeOut { get; set; } = "json";
 
             [Rules(RuleAction.Block)]
-            public string BlockChangesString { get; set; }
+            public string? BlockChangesString { get; set; }
 
             [Rules(RuleAction.Block)]
             public int HoursWorked { get; set; }

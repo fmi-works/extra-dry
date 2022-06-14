@@ -98,7 +98,7 @@ public class RuleEngine {
     private static (object? sourceValue, object? destinationValue) GetPropertyValues<T>(PropertyInfo property, T source, T destination)
     {
         try {
-            var sourceValue = property.GetValue(source);
+            var sourceValue = source != null ? property.GetValue(source) : null;
             var destinationValue = property.GetValue(destination);
             return (sourceValue, destinationValue);
         }
@@ -136,25 +136,34 @@ public class RuleEngine {
             // Copy object reference
             property.SetValue(destination, result);
         }
-        else if(!resolved && !property.PropertyType.IsValueType && property.PropertyType != typeof(string)) {
-            // Recurse through child to copy values
-            if(value != null && destinationValue == null) {
-                destinationValue = Activator.CreateInstance(value.GetType());
-                property.SetValue(destination, destinationValue);
-            }
-            if(destinationValue != null) {
-                await UpdatePropertiesAsync((dynamic?)value, (dynamic)destinationValue, --depth, selector);
-            }
-        }
         else {
             var same = (result == null && destinationValue == null) || (result?.Equals(destinationValue) ?? false);
             if(action == RuleAction.Block && !same) {
-                if(ignore?.Condition == JsonIgnoreCondition.Always) {
+                if(value == null || value == default || ignore?.Condition == JsonIgnoreCondition.Always) {
                     return;
                 }
                 throw new DryException($"Invalid attempt to change property '{property.Name}'", $"Attempt to change read-only property '{property.Name}'");
             }
-            property.SetValue(destination, result);
+
+            if(!resolved && !property.PropertyType.IsValueType && property.PropertyType != typeof(string)) {
+                // Recurse through child to copy values
+                if(value != null && destinationValue == null) {
+                    destinationValue = Activator.CreateInstance(value.GetType());
+                    property.SetValue(destination, destinationValue);
+                }
+                if(destinationValue != null) {
+                    // if the source value is null bypass the update and set the destination value to null.
+                    if(value == null) {
+                        property.SetValue(destination, null);
+                    }
+                    else {
+                        await UpdatePropertiesAsync((dynamic?)value, (dynamic)destinationValue, --depth, selector);
+                    }
+                }
+            }
+            else {
+                property.SetValue(destination, result);
+            }
         }
     }
 

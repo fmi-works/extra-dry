@@ -1,12 +1,4 @@
-﻿using ExtraDry.Core;
-using ExtraDry.Server;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-
-namespace ExtraDry.Core.Tests.Rules {
+﻿namespace ExtraDry.Server.Tests.Rules {
     public class RuleEngineUpdateTreeAsyncTests {
 
         [Fact]
@@ -21,8 +13,8 @@ namespace ExtraDry.Core.Tests.Rules {
 
             await rules.UpdateAsync(source, destination);
 
-            Assert.Equal(guid, destination.Child.Uuid);
-            Assert.Equal(gcguid, destination.Child.Grandchild.Uuid);
+            Assert.Equal(guid, destination.Child?.Uuid);
+            Assert.Equal(gcguid, destination.Child?.Grandchild?.Uuid);
         }
 
         [Fact]
@@ -37,7 +29,136 @@ namespace ExtraDry.Core.Tests.Rules {
             await rules.UpdateAsync(source, destination);
 
             Assert.NotNull(destination.Child);
-            Assert.Equal(guid, destination.Child.Uuid);
+            Assert.Equal(guid, destination.Child?.Uuid);
+        }
+
+        [Fact]
+        public async Task ChildRemovedWhenPresent()
+        {
+            var services = new ServiceProviderStub();
+            var rules = new RuleEngine(services);
+            var guid = Guid.NewGuid();
+            var source = new Parent { Child = null };
+            var destination = new Parent { Child = new Child { Uuid = guid } };
+
+            await rules.UpdateAsync(source, destination);
+
+            Assert.Null(destination.Child);
+        }
+
+        [Fact]
+        public async Task AllowChildAddedWhenNotPresent()
+        {
+            var services = new ServiceProviderStub();
+            var rules = new RuleEngine(services);
+            var guid = Guid.NewGuid();
+            var source = new Parent { AllowChild = new Child { Uuid = guid } };
+            var destination = new Parent { AllowChild = null };
+
+            await rules.UpdateAsync(source, destination);
+
+            Assert.NotNull(destination.AllowChild);
+            Assert.Equal(guid, destination.AllowChild?.Uuid);
+        }
+
+        [Fact]
+        public async Task AllowChildRemovedWhenPresent()
+        {
+            var services = new ServiceProviderStub();
+            var rules = new RuleEngine(services);
+            var guid = Guid.NewGuid();
+            var source = new Parent { AllowChild = null };
+            var destination = new Parent { AllowChild = new Child { Uuid = guid } };
+
+            await rules.UpdateAsync(source, destination);
+
+            Assert.Null(destination.AllowChild);
+        }
+
+        [Fact]
+        public async Task IgnoreChildNotAddedWhenNotPresent()
+        {
+            var services = new ServiceProviderStub();
+            var rules = new RuleEngine(services);
+            var guid = Guid.NewGuid();
+            var source = new Parent { IgnoreChild = new Child { Uuid = guid } };
+            var destination = new Parent { IgnoreChild = null };
+
+            await rules.UpdateAsync(source, destination);
+
+            Assert.Null(destination.IgnoreChild);
+        }
+
+        [Fact]
+        public async Task IgnoreChildNotRemovedWhenPresent()
+        {
+            var services = new ServiceProviderStub();
+            var rules = new RuleEngine(services);
+            var guid = Guid.NewGuid();
+            var source = new Parent { IgnoreChild = null };
+            var destination = new Parent { IgnoreChild = new Child { Uuid = guid } };
+
+            await rules.UpdateAsync(source, destination);
+
+            Assert.NotNull(destination.IgnoreChild);
+            Assert.Equal(guid, destination.IgnoreChild?.Uuid);
+        }
+
+        [Fact]
+        public async Task IgnoreDefaultsChildAddedWhenNotPresent()
+        {
+            var services = new ServiceProviderStub();
+            var rules = new RuleEngine(services);
+            var guid = Guid.NewGuid();
+            var source = new Parent { IgnoreDefaultsChild = new Child { Uuid = guid } };
+            var destination = new Parent { IgnoreDefaultsChild = null };
+
+            await rules.UpdateAsync(source, destination);
+
+            Assert.NotNull(destination.IgnoreDefaultsChild);
+            Assert.Equal(guid, destination.IgnoreDefaultsChild?.Uuid);
+        }
+
+        [Fact]
+        public async Task IgnoreDefaultsChildNotRemovedWhenPresent()
+        {
+            var services = new ServiceProviderStub();
+            var rules = new RuleEngine(services);
+            var guid = Guid.NewGuid();
+            var source = new Parent { IgnoreDefaultsChild = null };
+            var destination = new Parent { IgnoreDefaultsChild = new Child { Uuid = guid } };
+
+            await rules.UpdateAsync(source, destination);
+
+            Assert.NotNull(destination.IgnoreDefaultsChild);
+            Assert.Equal(guid, destination.IgnoreDefaultsChild?.Uuid);
+        }
+
+        [Fact]
+        public async Task BlockChildNotAddedWhenNotPresent()
+        {
+            var services = new ServiceProviderStub();
+            var rules = new RuleEngine(services);
+            var guid = Guid.NewGuid();
+            var source = new Parent { BlockChild = new Child { Uuid = guid } };
+            var destination = new Parent { BlockChild = null };
+
+            await Assert.ThrowsAsync<DryException>(async () => await rules.UpdateAsync(source, destination));
+        }
+
+        [Fact]
+        public async Task BlockChildNotRemovedWhenPresent()
+        {
+            var services = new ServiceProviderStub();
+            var rules = new RuleEngine(services);
+            var guid = Guid.NewGuid();
+            var source = new Parent { BlockChild = null };
+            var destination = new Parent { BlockChild = new Child { Uuid = guid } };
+
+            await rules.UpdateAsync(source, destination);
+
+            Assert.NotNull(destination.BlockChild);
+            Assert.Equal(guid, destination.BlockChild?.Uuid);
         }
 
         [Fact]
@@ -49,14 +170,14 @@ namespace ExtraDry.Core.Tests.Rules {
             var gcguid = Guid.NewGuid();
             var source = new Parent(guid, "Child", gcguid, "Grandchild");
             var destination = new Parent(guid, "Child", gcguid, "Grandchild");
-            source.Child.DontTouchThis = "dont-copy";
-            destination.Child.DontTouchThis = "remains";
+            source.Child!.DontTouchThis = "dont-copy";
+            destination.Child!.DontTouchThis = "remains";
 
             await rules.UpdateAsync(source, destination);
 
             Assert.NotNull(destination.Child);
             Assert.Equal(guid, destination.Child.Uuid);
-            Assert.Equal(gcguid, destination.Child.Grandchild.Uuid);
+            Assert.Equal(gcguid, destination.Child.Grandchild?.Uuid);
             Assert.Equal("remains", destination.Child.DontTouchThis);
         }
 
@@ -69,8 +190,8 @@ namespace ExtraDry.Core.Tests.Rules {
             var gcguid = Guid.NewGuid();
             var source = new Parent(guid, "Child", gcguid, "Grandchild");
             var destination = new Parent(guid, "Child", gcguid, "Grandchild");
-            source.Child.CantTouchThis = "dont-copy";
-            destination.Child.CantTouchThis = "remains";
+            source.Child!.CantTouchThis = "dont-copy";
+            destination.Child!.CantTouchThis = "remains";
 
             await Assert.ThrowsAsync<DryException>(async () => await rules.UpdateAsync(source, destination));
         }
@@ -84,8 +205,8 @@ namespace ExtraDry.Core.Tests.Rules {
             var gcguid = Guid.NewGuid();
             var source = new Parent(guid, "Child", gcguid, "Grandchild");
             var destination = new Parent(guid, "Child", gcguid, "Grandchild");
-            source.Child.Grandchild.Name = "source";
-            destination.Child.Grandchild.Name = "destination";
+            source.Child!.Grandchild!.Name = "source";
+            destination.Child!.Grandchild!.Name = "destination";
 
             await rules.UpdateAsync(source, destination);
 
@@ -114,8 +235,8 @@ namespace ExtraDry.Core.Tests.Rules {
             var gcguid = Guid.NewGuid();
             var source = new Parent(guid, "Child", gcguid, "Grandchild");
             var destination = new Parent(guid, "Child", gcguid, "Grandchild");
-            source.Child.Grandchild.Name = "source";
-            destination.Child.Grandchild.Name = "destination";
+            source.Child!.Grandchild!.Name = "source";
+            destination.Child!.Grandchild!.Name = "destination";
 
             rules.MaxRecursionDepth = 1;
             await Assert.ThrowsAsync<DryException>(async () => await rules.UpdateAsync(source, destination));
@@ -135,15 +256,15 @@ namespace ExtraDry.Core.Tests.Rules {
 
             public string Name { get; set; } = "Child";
 
-            public Grandchild Grandchild { get; set; }
+            public Grandchild? Grandchild { get; set; }
 
             [Rules(RuleAction.Ignore)]
-            public string DontTouchThis { get; set; }
+            public string? DontTouchThis { get; set; }
 
             [Rules(RuleAction.Block)]
-            public string CantTouchThis { get; set; }
+            public string? CantTouchThis { get; set; }
 
-            public override bool Equals(object obj) => (obj as Child)?.Uuid == Uuid;
+            public override bool Equals(object? obj) => (obj as Child)?.Uuid == Uuid;
 
             public override int GetHashCode() => Uuid.GetHashCode();
 
@@ -168,13 +289,19 @@ namespace ExtraDry.Core.Tests.Rules {
             [Rules(RuleAction.Block)]
             public int Id { get; set; } = 1;
 
-            public Child Child { get; set; }
+            public Child? Child { get; set; }
 
             [Rules(RuleAction.Allow)]
-            public Child AllowChild { get; set; }
+            public Child? AllowChild { get; set; }
 
             [Rules(RuleAction.Ignore)]
-            public Child IgnoreChild { get; set; }
+            public Child? IgnoreChild { get; set; }
+
+            [Rules(RuleAction.IgnoreDefaults)]
+            public Child? IgnoreDefaultsChild { get; set; }
+
+            [Rules(RuleAction.Block)]
+            public Child? BlockChild { get; set; }
 
         }
 
@@ -182,10 +309,10 @@ namespace ExtraDry.Core.Tests.Rules {
             public Task<Child> ResolveAsync(Child exemplar)
             {
                 if(database.ContainsKey(exemplar?.Uuid ?? Guid.Empty)) {
-                    return Task.FromResult(database[exemplar.Uuid]);
+                    return Task.FromResult(database[exemplar!.Uuid]);
                 }
                 else {
-                    return Task.FromResult<Child>(null);
+                    return Task.FromResult<Child>(null!);
                 }
             }
 
@@ -199,7 +326,7 @@ namespace ExtraDry.Core.Tests.Rules {
         }
 
         public class ServiceProviderStubWithChildResolver : IServiceProvider {
-            public object GetService(Type serviceType)
+            public object? GetService(Type serviceType)
             {
                 if(serviceType.IsAssignableTo(typeof(IEntityResolver<Child>))) {
                     return ChildResolver;
@@ -214,13 +341,13 @@ namespace ExtraDry.Core.Tests.Rules {
         }
 
         public class ServiceProviderStub : IServiceProvider {
-            public object GetService(Type serviceType) => null;
+            public object? GetService(Type serviceType) => null;
 
         }
 
         public class Malformed {
             public string Name { get; set; } = "Name";
-            public Malformed Child { get; set; }
+            public Malformed? Child { get; set; }
         }
 
     }
