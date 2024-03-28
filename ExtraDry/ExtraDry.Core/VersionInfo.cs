@@ -86,7 +86,7 @@ public class VersionInfo
     /// </summary>
     public const int MaxEmailLength = 80;
 
-    private static string Truncate(string value, int length) => value.Length > length ? value[..length] : value;
+    private static string Truncate(string value, int length) => value.Length > length ? value.Substring(0, length) : value;
 
     /// <summary>
     /// User readable string representation, UI fallback.

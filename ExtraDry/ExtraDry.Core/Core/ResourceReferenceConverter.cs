@@ -33,10 +33,10 @@ public class ResourceReferenceConverter<T> : JsonConverter<T> where T : IResourc
             obj.Uuid = reference.Uuid;
         }
         if(!string.IsNullOrEmpty(reference.Slug)) {
-            obj.Slug = reference.Slug;
+            obj.Slug = reference.Slug ?? string.Empty;
         }
         if(!string.IsNullOrEmpty(reference.Title)) {
-            obj.Title = reference.Title;
+            obj.Title = reference.Title ?? string.Empty;
         }
         var validator = new DataValidator();
         var valid = validator.ValidateObject(obj);

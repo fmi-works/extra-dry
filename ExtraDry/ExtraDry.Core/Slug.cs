@@ -28,7 +28,7 @@ public static class Slug
     public static string ToSlug(string name, int maxLength, bool lowercase = true)
     {
         var slug = ToSlug(name, lowercase);
-        return slug.Length > maxLength ? slug[..maxLength] : slug;
+        return slug.Length > maxLength ? slug.Substring(0, maxLength) : slug;
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public static class Slug
     public static string ToTitleSlug(string name, int maxLength)
     {
         var slug = ToSlugInternal(name, true, string.Empty);
-        return slug.Length > maxLength ? slug[..maxLength] : slug;
+        return slug.Length > maxLength ? slug.Substring(0, maxLength) : slug;
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public static class Slug
     public static string ToCodeSlug(string name, int maxLength)
     {
         var slug = ToSlugInternal(name, false, string.Empty);
-        return slug.Length > maxLength ? slug[..maxLength] : slug;
+        return slug.Length > maxLength ? slug.Substring(0, maxLength) : slug;
     }
 
     /// <summary>
@@ -250,7 +250,7 @@ public static class Slug
     private static string TrimEnd(string value, string end)
     {
         if(value.EndsWith(end, StringComparison.InvariantCultureIgnoreCase)) {
-            return value[..^end.Length].TrimEnd();
+            return value.Substring(0, value.Length - end.Length).TrimEnd();
         }
         else {
             return value;

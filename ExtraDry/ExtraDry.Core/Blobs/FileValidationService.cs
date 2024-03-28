@@ -225,7 +225,7 @@ public class FileValidationService
         if(extensionAliases.Intersect(KnownXmlFileTypes).Any()) {
             // Take the first 1000 characters, it's a sanity check, not anti-virus
             var filecontent = Encoding.UTF8.GetString(content.Take(1000).ToArray());
-            if(filecontent.Contains("<script", StringComparison.InvariantCultureIgnoreCase)) {
+            if(filecontent.IndexOf("<script", StringComparison.InvariantCultureIgnoreCase) >= 0) {
                 yield return new ValidationResult("Provided file is an XML filetype with protected tags", new[] { nameof(content) });
             }
         }
